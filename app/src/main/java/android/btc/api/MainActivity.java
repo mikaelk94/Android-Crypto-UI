@@ -52,7 +52,6 @@ public class MainActivity extends AppCompatActivity {
         try {
             RequestQueue queue = Volley.newRequestQueue(this);
             String url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=eur&from=" + startDate + "&to=" + endDate;
-            System.out.println(url);
             StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                     response -> {
                         handleRequest.handleJson(response);

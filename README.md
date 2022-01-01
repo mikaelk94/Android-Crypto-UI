@@ -1,4 +1,3 @@
-# Android
 # Steps for running this app on android (You may also run it in other ways if you please):
 1. Download android studio from https://developer.android.com/studio
 2. Clone this github repo to your local machine
