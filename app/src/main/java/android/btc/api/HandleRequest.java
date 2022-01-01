@@ -16,19 +16,21 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class HandleRequest {
 
-    long startTimestamp, endTimestamp;
+    String currentTime, previousTime, time, volumeTime, buyTime, sellTime;
+    Long startTimestamp, endTimestamp, timeLong;
+    Double price;
     long dailyData = 7776000;
     int bearishDaysCount;
-    double currentDay, previousDay, volume, maxVolume, buyPrice, sellPrice, price;
-    String currentTime, previousTime, time, volumeTime, buyTime, sellTime;
+    double currentPrice, previousPrice, nextPrice, buyPrice, sellPrice, volume, maxVolume, currentDifference, newDifference;
 
     List<Integer> bearishDaysList = new ArrayList<>();
     LocalDate volumeDate, buyDate, sellDate;
 
-    // The response string is converted into JSON object
+    /* The response string is converted into JSON object */
     public void handleJson(String response) {
         try {
             JSONObject jsonObject = new JSONObject(response);
@@ -42,7 +44,7 @@ public class HandleRequest {
         }
     }
 
-    // Gets the key for equivalent value in a hashmap
+    /* Gets the key for equivalent value in a hashmap */
     public static <K, V> K getKey(Map<K, V> map, V value)
     {
         return map.entrySet()
@@ -52,13 +54,14 @@ public class HandleRequest {
                 .findFirst().get();
     }
 
-    // Converts datetime to unix timestamp
+    /* Converts datetime to unix timestamp */
     public void dateToTimeStamp(String startDate, String endDate) {
         try {
             startTimestamp = LocalDate
                     .parse(startDate, DateTimeFormatter.ofPattern("dd-MM-uu"))
                     .atStartOfDay(ZoneOffset.UTC)
                     .toInstant().toEpochMilli() / 1000;
+            // One hour (3600 seconds) is added to the endTimestamp.
             endTimestamp = LocalDate
                     .parse(endDate, DateTimeFormatter.ofPattern("dd-MM-uu"))
                     .atStartOfDay(ZoneOffset.UTC)
@@ -68,45 +71,62 @@ public class HandleRequest {
         }
     }
 
-    // Function for getting the best buy and sell date for the examined time period
+    /* Function for getting the best buy and sell date for the examined time period */
     public void getMostProfit(JSONArray pricesArray) throws JSONException {
-        HashMap<String, Double> pricesMap = new HashMap<>();
+        List<Double> pricesList = new ArrayList<>();
+        TreeMap<Long, Double> pricesMap = new TreeMap<>();
         // If the examined time period is less than 90 days
         if (endTimestamp - startTimestamp < dailyData) {
-            for (int i=0; i<pricesArray.length(); i++) {
+            for (int i=0; i<(pricesArray.length()-1); i++) {
+                // Get the time and price every 24 hours
                 if (i%24 == 0) {
-                    time = pricesArray.getJSONArray(i).get(0).toString();
+                    timeLong = Long.parseLong(pricesArray.getJSONArray(i).get(0).toString());
                     price = Double.parseDouble(pricesArray.getJSONArray(i).get(1).toString());
                     if (i > 0) {
-                        time = pricesArray.getJSONArray(i+1).get(0).toString();
+                        timeLong = Long.parseLong(pricesArray.getJSONArray(i+1).get(0).toString());
                         price = Double.parseDouble(pricesArray.getJSONArray(i+1).get(1).toString());
                     }
-                    pricesMap.put(time, price);
+                    pricesMap.put(timeLong, price);
+                    pricesList.add(price);
                 }
             }
         }
         // If the examined time period is greater than 90 days
         else if (endTimestamp - startTimestamp >= dailyData) {
             for (int i=0; i<pricesArray.length(); i++) {
-                time = pricesArray.getJSONArray(i).get(0).toString();
+                timeLong = Long.parseLong(pricesArray.getJSONArray(i).get(0).toString());
                 price = Double.parseDouble(pricesArray.getJSONArray(i).get(1).toString());
-                pricesMap.put(time, price);
+                pricesMap.put(timeLong, price);
+                pricesList.add(price);
             }
         }
-        buyPrice = Collections.min(pricesMap.values());
-        sellPrice = Collections.max(pricesMap.values());
-        buyTime = getKey(pricesMap, buyPrice);
-        sellTime = getKey(pricesMap, sellPrice);
+        // I used nested for-loops to get the best days for selling and buying. The nesting makes sure that the buying day is always prior to the selling day.
+        for (int i=0; i<pricesList.size(); i++) {
+            for (int j=i; j<pricesList.size(); j++) {
+                currentPrice = Double.parseDouble(pricesList.get(i).toString());
+                nextPrice = Double.parseDouble(pricesList.get(j).toString());
+                newDifference = nextPrice - currentPrice;
+                if (newDifference > currentDifference) {
+                    currentDifference = newDifference;
+                    currentTime = getKey(pricesMap, currentPrice).toString();
+                    buyTime = currentTime;
+                    sellTime = getKey(pricesMap, nextPrice).toString();
+                    buyPrice = currentPrice;
+                    sellPrice = nextPrice;
+                }
+            }
+        }
         buyDate = Instant.ofEpochMilli(Long.parseLong(buyTime)).atZone(ZoneId.systemDefault()).toLocalDate();
         sellDate = Instant.ofEpochMilli(Long.parseLong(sellTime)).atZone(ZoneId.systemDefault()).toLocalDate();
-        System.out.println(buyTime + " " + buyPrice);
-        System.out.println(sellTime + " " + sellPrice);
+        /* For debugging
+        System.out.println("Buy time: " + buyTime + " " + buyPrice);
+        System.out.println("Sell time: " + sellTime + " " + sellPrice);
+         */
     }
 
-    // Function for getting the highest volume and its date for the examined time period
+    /* Function for getting the highest volume and its date for the examined time period */
     public void getHighestVolume(JSONArray volumesArray) throws JSONException {
         HashMap<String, Double> volumesMap = new HashMap<>();
-        System.out.println(volumesArray.length());
         // If the examined time period is less than 90 days
         if (endTimestamp - startTimestamp < dailyData) {
             for (int i=0; i<volumesArray.length(); i++) {
@@ -129,10 +149,12 @@ public class HandleRequest {
         maxVolume = Collections.max(volumesMap.values());
         volumeTime = getKey(volumesMap, maxVolume);
         volumeDate = Instant.ofEpochMilli(Long.parseLong(volumeTime)).atZone(ZoneId.systemDefault()).toLocalDate();
+        /* For debugging
         System.out.println(volumeTime + " " + maxVolume);
+         */
     }
 
-    // Function for getting the longest bearish trend for the examined time period
+    /* Function for getting the longest bearish trend for the examined time period */
     public void getBearishDays(@NonNull JSONArray pricesArray) throws JSONException {
         bearishDaysCount = 0;
         // If the examined time period is less than 90 days
@@ -140,20 +162,20 @@ public class HandleRequest {
             for (int i=0; i<(pricesArray.length()-1); i++) {
                 // Get the price every 24 hours
                 if (i%24 == 0) {
-                    currentDay = Double.parseDouble(pricesArray.getJSONArray(i).get(1).toString());
+                    currentPrice = Double.parseDouble(pricesArray.getJSONArray(i).get(1).toString());
                     currentTime = pricesArray.getJSONArray(i).get(0).toString();
                     if (i > 0) {
-                        previousDay = Double.parseDouble(pricesArray.getJSONArray(i-24).get(1).toString());
+                        previousPrice = Double.parseDouble(pricesArray.getJSONArray(i-24).get(1).toString());
                         previousTime = pricesArray.getJSONArray(i-24).get(0).toString();
                     }
                     if (i > 24) {
                         previousTime = pricesArray.getJSONArray(i-23).get(0).toString();
-                        previousDay = Double.parseDouble(pricesArray.getJSONArray(i-23).get(1).toString());
+                        previousPrice = Double.parseDouble(pricesArray.getJSONArray(i-23).get(1).toString());
                     }
-                    if (currentDay < previousDay) {
+                    if (currentPrice < previousPrice) {
                         bearishDaysCount = bearishDaysCount + 1;
                     }
-                    else if (currentDay > previousDay && bearishDaysCount > 0){
+                    else if (currentPrice > previousPrice && bearishDaysCount > 0){
                         bearishDaysList.add(bearishDaysCount);
                         bearishDaysCount = 0;
                     }
@@ -163,16 +185,16 @@ public class HandleRequest {
         // If the examined time period is greater than 90 days
         else if (endTimestamp - startTimestamp >= dailyData) {
             for (int i=0; i<pricesArray.length(); i++) {
-                currentDay = Double.parseDouble(pricesArray.getJSONArray(i).get(1).toString());
+                currentPrice = Double.parseDouble(pricesArray.getJSONArray(i).get(1).toString());
                 currentTime = pricesArray.getJSONArray(i).get(0).toString();
                 if (i > 0) {
-                    previousDay = Double.parseDouble(pricesArray.getJSONArray(i-1).get(1).toString());
+                    previousPrice = Double.parseDouble(pricesArray.getJSONArray(i-1).get(1).toString());
                     previousTime = pricesArray.getJSONArray(i-1).get(0).toString();
                 }
-                if (currentDay < previousDay) {
+                if (currentPrice < previousPrice) {
                     bearishDaysCount = bearishDaysCount + 1;
                 }
-                else if (currentDay > previousDay && bearishDaysCount > 0){
+                else if (currentPrice > previousPrice && bearishDaysCount > 0){
                     bearishDaysList.add(bearishDaysCount);
                     bearishDaysCount = 0;
                 }
@@ -184,7 +206,7 @@ public class HandleRequest {
             System.out.println("Subsequent Bearish days list size: " + bearishDaysList.size());
             System.out.println("Subsequent Bearish days list: " + bearishDaysList);
             System.out.println("Most subsequent bearish days: " + bearishDaysCount);
-            */
+             */
             bearishDaysList.clear();
         }
     }
