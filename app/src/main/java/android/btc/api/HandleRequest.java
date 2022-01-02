@@ -74,12 +74,7 @@ public class HandleRequest {
     public void getMostProfit(JSONArray pricesArray) throws JSONException {
         List<Double> pricesList = new ArrayList<>();
         TreeMap<Long, Double> pricesMap = new TreeMap<>();
-        buyTime = "";
-        sellTime = "";
-        buyPrice = 0.0;
-        sellPrice = 0.0;
-        buyDateString = "";
-        sellDateString = "";
+        currentDifference = 0;
 
         // If the examined time period is less than 90 days
         if (endTimestamp - startTimestamp < dailyData) {
@@ -126,19 +121,14 @@ public class HandleRequest {
                     buyDateString = buyDate.toString();
                     sellDateString = sellDate.toString();
                 }
+
+                // If the price is only decreasing, currentDifference will store zero
+                if (currentDifference == 0) {
+                    buyDateString = "No profit available";
+                    sellDateString = "";
+                }
             }
         }
-
-        // If the price only decreases, the buyPrice value will be zero
-        if (buyPrice == 0) {
-            buyDateString = "No profit";
-            sellDateString = "No profit";
-        }
-
-        /* For debugging
-        System.out.println("Buy time: " + buyTime + " " + buyPrice);
-        System.out.println("Sell time: " + sellTime + " " + sellPrice);
-         */
     }
 
     /* Function for getting the highest volume and its date for the examined time period */
