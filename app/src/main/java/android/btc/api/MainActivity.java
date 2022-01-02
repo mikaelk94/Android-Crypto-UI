@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
         btnUpdate.setOnClickListener(v -> {
             String startDate = etStartDate.getText().toString();
             String endDate = etEndDate.getText().toString();
-            handleRequest.dateToTimeStamp(startDate,endDate);
+            handleRequest.dateToTimestamp(startDate,endDate);
             fetchData();
         });
     }
@@ -57,8 +57,8 @@ public class MainActivity extends AppCompatActivity {
                         handleRequest.handleJson(response);
                         tvBearishDays.setText(String.valueOf(handleRequest.bearishDaysCount));
                         tvVolume.setText(String.format("%.2f", handleRequest.maxVolume) + "€ " + " on " + handleRequest.volumeDate);
-                        tvBuy.setText(handleRequest.buyDate.toString());
-                        tvSell.setText(handleRequest.sellDate.toString());
+                        tvBuy.setText(handleRequest.buyDateString);
+                        tvSell.setText(handleRequest.sellDateString);
                     },
                     error -> System.out.println(error.toString())
             );

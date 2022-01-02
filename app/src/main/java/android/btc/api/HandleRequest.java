@@ -20,7 +20,7 @@ import java.util.TreeMap;
 
 public class HandleRequest {
 
-    String currentTime, previousTime, time, volumeTime, buyTime, sellTime;
+    String currentTime, previousTime, time, volumeTime, buyTime, sellTime, buyDateString, sellDateString;
     Long startTimestamp, endTimestamp, timeLong;
     Double price;
     long dailyData = 7776000;
@@ -44,9 +44,8 @@ public class HandleRequest {
         }
     }
 
-    /* Gets the key for equivalent value in a hashmap */
-    public static <K, V> K getKey(Map<K, V> map, V value)
-    {
+    /* Gets the key for equivalent value in a map */
+    public static <K, V> K getKey(Map<K, V> map, V value) {
         return map.entrySet()
                 .stream()
                 .filter(entry -> value.equals(entry.getValue()))
@@ -55,7 +54,7 @@ public class HandleRequest {
     }
 
     /* Converts datetime to unix timestamp */
-    public void dateToTimeStamp(String startDate, String endDate) {
+    public void dateToTimestamp(String startDate, String endDate) {
         try {
             startTimestamp = LocalDate
                     .parse(startDate, DateTimeFormatter.ofPattern("dd-MM-uu"))
@@ -75,6 +74,13 @@ public class HandleRequest {
     public void getMostProfit(JSONArray pricesArray) throws JSONException {
         List<Double> pricesList = new ArrayList<>();
         TreeMap<Long, Double> pricesMap = new TreeMap<>();
+        buyTime = "";
+        sellTime = "";
+        buyPrice = 0.0;
+        sellPrice = 0.0;
+        buyDateString = "";
+        sellDateString = "";
+
         // If the examined time period is less than 90 days
         if (endTimestamp - startTimestamp < dailyData) {
             for (int i=0; i<(pricesArray.length()-1); i++) {
@@ -91,6 +97,7 @@ public class HandleRequest {
                 }
             }
         }
+
         // If the examined time period is greater than 90 days
         else if (endTimestamp - startTimestamp >= dailyData) {
             for (int i=0; i<pricesArray.length(); i++) {
@@ -100,7 +107,8 @@ public class HandleRequest {
                 pricesList.add(price);
             }
         }
-        // I used nested for-loops to get the best days for selling and buying. The nesting makes sure that the buying day is always prior to the selling day.
+
+        // I used nested for-loop to get the best days for selling and buying. The nesting makes sure that the buying day is always prior to the selling day.
         for (int i=0; i<pricesList.size(); i++) {
             for (int j=i; j<pricesList.size(); j++) {
                 currentPrice = Double.parseDouble(pricesList.get(i).toString());
@@ -113,11 +121,20 @@ public class HandleRequest {
                     sellTime = getKey(pricesMap, nextPrice).toString();
                     buyPrice = currentPrice;
                     sellPrice = nextPrice;
+                    buyDate = Instant.ofEpochMilli(Long.parseLong(buyTime)).atZone(ZoneId.systemDefault()).toLocalDate();
+                    sellDate = Instant.ofEpochMilli(Long.parseLong(sellTime)).atZone(ZoneId.systemDefault()).toLocalDate();
+                    buyDateString = buyDate.toString();
+                    sellDateString = sellDate.toString();
                 }
             }
         }
-        buyDate = Instant.ofEpochMilli(Long.parseLong(buyTime)).atZone(ZoneId.systemDefault()).toLocalDate();
-        sellDate = Instant.ofEpochMilli(Long.parseLong(sellTime)).atZone(ZoneId.systemDefault()).toLocalDate();
+
+        // If the price only decreases, the buyPrice value will be zero
+        if (buyPrice == 0) {
+            buyDateString = "No profit";
+            sellDateString = "No profit";
+        }
+
         /* For debugging
         System.out.println("Buy time: " + buyTime + " " + buyPrice);
         System.out.println("Sell time: " + sellTime + " " + sellPrice);
@@ -127,6 +144,7 @@ public class HandleRequest {
     /* Function for getting the highest volume and its date for the examined time period */
     public void getHighestVolume(JSONArray volumesArray) throws JSONException {
         HashMap<String, Double> volumesMap = new HashMap<>();
+
         // If the examined time period is less than 90 days
         if (endTimestamp - startTimestamp < dailyData) {
             for (int i=0; i<volumesArray.length(); i++) {
@@ -138,6 +156,7 @@ public class HandleRequest {
                 }
             }
         }
+
         // If the examined time period is greater than 90 days
         else if (endTimestamp - startTimestamp >= dailyData) {
             for (int i=0; i<volumesArray.length(); i++) {
@@ -146,6 +165,7 @@ public class HandleRequest {
                 volumesMap.put(time, volume);
             }
         }
+
         maxVolume = Collections.max(volumesMap.values());
         volumeTime = getKey(volumesMap, maxVolume);
         volumeDate = Instant.ofEpochMilli(Long.parseLong(volumeTime)).atZone(ZoneId.systemDefault()).toLocalDate();
@@ -157,6 +177,7 @@ public class HandleRequest {
     /* Function for getting the longest bearish trend for the examined time period */
     public void getBearishDays(@NonNull JSONArray pricesArray) throws JSONException {
         bearishDaysCount = 0;
+
         // If the examined time period is less than 90 days
         if (endTimestamp - startTimestamp < dailyData) {
             for (int i=0; i<(pricesArray.length()-1); i++) {
@@ -182,6 +203,7 @@ public class HandleRequest {
                 }
             }
         }
+
         // If the examined time period is greater than 90 days
         else if (endTimestamp - startTimestamp >= dailyData) {
             for (int i=0; i<pricesArray.length(); i++) {
@@ -200,6 +222,7 @@ public class HandleRequest {
                 }
             }
         }
+
         if (bearishDaysList.size() > 0) {
             bearishDaysCount = Collections.max(bearishDaysList);
             /* For debugging
