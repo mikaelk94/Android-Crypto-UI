@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
             StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                     response -> {
                         handleRequest.handleJson(response);
-                        tvBearishDays.setText(String.valueOf(handleRequest.bearishDaysCount));
+                        tvBearishDays.setText(handleRequest.bearishDaysString);
                         tvVolume.setText(String.format("%.2f", handleRequest.maxVolume) + "€ " + " on " + handleRequest.volumeDate);
                         tvBuy.setText(handleRequest.buyDateString);
                         tvSell.setText(handleRequest.sellDateString);

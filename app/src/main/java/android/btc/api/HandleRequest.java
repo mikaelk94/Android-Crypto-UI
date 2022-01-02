@@ -20,7 +20,7 @@ import java.util.TreeMap;
 
 public class HandleRequest {
 
-    String currentTime, previousTime, time, volumeTime, buyTime, sellTime, buyDateString, sellDateString;
+    String currentTime, previousTime, time, volumeTime, buyTime, sellTime, buyDateString, sellDateString, bearishDaysString;
     Long startTimestamp, endTimestamp, timeLong;
     Double price;
     long dailyData = 7776000;
@@ -159,18 +159,17 @@ public class HandleRequest {
         maxVolume = Collections.max(volumesMap.values());
         volumeTime = getKey(volumesMap, maxVolume);
         volumeDate = Instant.ofEpochMilli(Long.parseLong(volumeTime)).atZone(ZoneId.systemDefault()).toLocalDate();
-        /* For debugging
-        System.out.println(volumeTime + " " + maxVolume);
-         */
     }
 
     /* Function for getting the longest bearish trend for the examined time period */
     public void getBearishDays(@NonNull JSONArray pricesArray) throws JSONException {
+        bearishDaysList.clear();
         bearishDaysCount = 0;
+        bearishDaysString = "0";
 
         // If the examined time period is less than 90 days
         if (endTimestamp - startTimestamp < dailyData) {
-            for (int i=0; i<(pricesArray.length()-1); i++) {
+            for (int i=0; i<(pricesArray.length()); i++) {
                 // Get the price every 24 hours
                 if (i%24 == 0) {
                     currentPrice = Double.parseDouble(pricesArray.getJSONArray(i).get(1).toString());
@@ -178,17 +177,16 @@ public class HandleRequest {
                     if (i > 0) {
                         previousPrice = Double.parseDouble(pricesArray.getJSONArray(i-24).get(1).toString());
                         previousTime = pricesArray.getJSONArray(i-24).get(0).toString();
-                    }
-                    if (i > 24) {
-                        previousTime = pricesArray.getJSONArray(i-23).get(0).toString();
-                        previousPrice = Double.parseDouble(pricesArray.getJSONArray(i-23).get(1).toString());
-                    }
-                    if (currentPrice < previousPrice) {
-                        bearishDaysCount = bearishDaysCount + 1;
-                    }
-                    else if (currentPrice > previousPrice && bearishDaysCount > 0){
-                        bearishDaysList.add(bearishDaysCount);
-                        bearishDaysCount = 0;
+                        if (i > 24) {
+                            previousTime = pricesArray.getJSONArray(i-23).get(0).toString();
+                            previousPrice = Double.parseDouble(pricesArray.getJSONArray(i-23).get(1).toString());
+                        }
+                        if (currentPrice < previousPrice) {
+                            bearishDaysCount = bearishDaysCount + 1;
+                        }
+                        if (bearishDaysCount > 0) {
+                            bearishDaysList.add(bearishDaysCount);
+                        }
                     }
                 }
             }
@@ -206,7 +204,7 @@ public class HandleRequest {
                 if (currentPrice < previousPrice) {
                     bearishDaysCount = bearishDaysCount + 1;
                 }
-                else if (currentPrice > previousPrice && bearishDaysCount > 0){
+                if (currentPrice > previousPrice && bearishDaysCount > 0){
                     bearishDaysList.add(bearishDaysCount);
                     bearishDaysCount = 0;
                 }
@@ -215,11 +213,7 @@ public class HandleRequest {
 
         if (bearishDaysList.size() > 0) {
             bearishDaysCount = Collections.max(bearishDaysList);
-            /* For debugging
-            System.out.println("Subsequent Bearish days list size: " + bearishDaysList.size());
-            System.out.println("Subsequent Bearish days list: " + bearishDaysList);
-            System.out.println("Most subsequent bearish days: " + bearishDaysCount);
-             */
+            bearishDaysString = String.valueOf(bearishDaysCount);
             bearishDaysList.clear();
         }
     }
