@@ -5,3 +5,5 @@
 4. Create a new virtual device from AVD manager for running the app, i recommend choosing 'Pixel 4 API 29' for the best experience. 
 ![image](https://user-images.githubusercontent.com/60295878/147826059-5a94d137-24f3-4e8c-94bf-83792185f59c.png)
 5. Press the 'run app' -button and the app should start
+
+![image](https://user-images.githubusercontent.com/60295878/147893051-85c3417f-ae66-46d9-9a06-f1f87a248ff8.png)
