@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
                     response -> {
                         handleRequest.handleJson(response);
                         tvBearishDays.setText(handleRequest.bearishDaysString);
-                        tvVolume.setText(String.format("%.2f", handleRequest.maxVolume) + "€ " + " on " + handleRequest.volumeDate);
+                        tvVolume.setText(String.format("%.2f", handleRequest.maxVolume) + " € " + " on " + handleRequest.volumeDate);
                         tvBuy.setText(handleRequest.buyDateString);
                         tvSell.setText(handleRequest.sellDateString);
                     },
