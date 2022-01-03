@@ -122,7 +122,7 @@ public class HandleRequest {
                     sellDateString = sellDate.toString();
                 }
 
-                // If the price is only decreasing, currentDifference will store zero
+                // If the price is only decreasing, currentDifference is 0
                 if (currentDifference == 0) {
                     buyDateString = "No profit available";
                     sellDateString = "";
@@ -163,12 +163,12 @@ public class HandleRequest {
 
     /* Function for getting the longest bearish trend for the examined time period */
     public void getBearishDays(@NonNull JSONArray pricesArray) throws JSONException {
-        bearishDaysList.clear();
         bearishDaysCount = 0;
         bearishDaysString = "0";
 
         // If the examined time period is less than 90 days
         if (endTimestamp - startTimestamp < dailyData) {
+            System.out.println(pricesArray.length());
             for (int i=0; i<(pricesArray.length()); i++) {
                 // Get the price every 24 hours
                 if (i%24 == 0) {
@@ -184,8 +184,10 @@ public class HandleRequest {
                         if (currentPrice < previousPrice) {
                             bearishDaysCount = bearishDaysCount + 1;
                         }
-                        if (bearishDaysCount > 0) {
+                        // BearishDaysCount gets added into the list when the price is increasing or the pricesArray comes to an end
+                        if (currentPrice > previousPrice || (i >= pricesArray.length()-23)) {
                             bearishDaysList.add(bearishDaysCount);
+                            bearishDaysCount = 0;
                         }
                     }
                 }
@@ -200,13 +202,13 @@ public class HandleRequest {
                 if (i > 0) {
                     previousPrice = Double.parseDouble(pricesArray.getJSONArray(i-1).get(1).toString());
                     previousTime = pricesArray.getJSONArray(i-1).get(0).toString();
-                }
-                if (currentPrice < previousPrice) {
-                    bearishDaysCount = bearishDaysCount + 1;
-                }
-                if (currentPrice > previousPrice && bearishDaysCount > 0){
-                    bearishDaysList.add(bearishDaysCount);
-                    bearishDaysCount = 0;
+                    if (currentPrice < previousPrice) {
+                        bearishDaysCount = bearishDaysCount + 1;
+                    }
+                    if (currentPrice > previousPrice && bearishDaysCount != 0){
+                        bearishDaysList.add(bearishDaysCount);
+                        bearishDaysCount = 0;
+                    }
                 }
             }
         }
