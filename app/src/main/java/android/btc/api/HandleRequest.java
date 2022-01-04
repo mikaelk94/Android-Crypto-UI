@@ -44,15 +44,6 @@ public class HandleRequest {
         }
     }
 
-    /* Gets the key for equivalent value in a map */
-    public static <K, V> K getKey(Map<K, V> map, V value) {
-        return map.entrySet()
-                .stream()
-                .filter(entry -> value.equals(entry.getValue()))
-                .map(Map.Entry::getKey)
-                .findFirst().get();
-    }
-
     /* Converts datetime to unix timestamp */
     public void dateToTimestamp(String startDate, String endDate) {
         try {
@@ -70,8 +61,17 @@ public class HandleRequest {
         }
     }
 
+    /* Gets the key for equivalent value in a map */
+    private static <K, V> K getKey(Map<K, V> map, V value) {
+        return map.entrySet()
+                .stream()
+                .filter(entry -> value.equals(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .findFirst().get();
+    }
+
     /* Function for getting the best buy and sell date for the examined time period */
-    public void getMostProfit(JSONArray pricesArray) throws JSONException {
+    private void getMostProfit(JSONArray pricesArray) throws JSONException {
         List<Double> pricesList = new ArrayList<>();
         TreeMap<Long, Double> pricesMap = new TreeMap<>();
         currentDifference = 0;
@@ -132,7 +132,7 @@ public class HandleRequest {
     }
 
     /* Function for getting the highest volume and its date for the examined time period */
-    public void getHighestVolume(JSONArray volumesArray) throws JSONException {
+    private void getHighestVolume(JSONArray volumesArray) throws JSONException {
         HashMap<String, Double> volumesMap = new HashMap<>();
 
         // If the examined time period is less than 90 days
@@ -162,7 +162,7 @@ public class HandleRequest {
     }
 
     /* Function for getting the longest bearish trend for the examined time period */
-    public void getBearishDays(@NonNull JSONArray pricesArray) throws JSONException {
+    private void getBearishDays(@NonNull JSONArray pricesArray) throws JSONException {
         bearishDaysCount = 0;
         bearishDaysString = "0";
 
