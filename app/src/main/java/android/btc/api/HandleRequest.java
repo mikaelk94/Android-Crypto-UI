@@ -19,16 +19,18 @@ import java.util.TreeMap;
 
 public class HandleRequest {
 
-    Double price;
-    double currentPrice, previousPrice, nextPrice, buyPrice, sellPrice, volume, maxVolume, currentDifference, newDifference;
-    int bearishDaysCount, hour;
-    Long startTimestamp, endTimestamp, timeLong;
-    final long dailyData = 7776000; // 90 days in seconds
-    String currentTime, previousTime, time, volumeTime, buyTime, sellTime, buyDateString, sellDateString, bearishDaysString;
-    LocalDate volumeDate, buyDate, sellDate;
+    private static final long dailyData = 7776000; // 90 days in seconds
+    public static double maxVolume;
+    public static String buyDateString, sellDateString, bearishDaysString;
+    public static Long startTimestamp, endTimestamp, timeLong;
+    static double currentPrice, previousPrice, nextPrice, buyPrice, sellPrice, volume, currentDifference, newDifference;
+    static int bearishDaysCount;
+    static Double price;
+    static String currentTime, previousTime, time, volumeTime, buyTime, sellTime;
+    static LocalDate volumeDate, buyDate, sellDate;
 
     /* The response string is converted into JSON object */
-    public void handleJson(String response) {
+    public static void handleJSON(String response) {
         try {
             JSONObject jsonObject = new JSONObject(response);
             JSONArray pricesArray = jsonObject.getJSONArray("prices");
@@ -42,7 +44,7 @@ public class HandleRequest {
     }
 
     /* Converts date to unix timestamp */
-    public void dateToTimestamp(String startDate, String endDate) {
+    public static void dateToTimestamp(String startDate, String endDate) {
         try {
             startTimestamp = LocalDate
                     .parse(startDate, DateTimeFormatter.ofPattern("dd-MM-uu"))
@@ -68,13 +70,12 @@ public class HandleRequest {
     }
 
     /* Gets the hour out of a timestamp */
-    private Integer timestampToHour (String timestamp) {
-        hour = Instant.ofEpochMilli(Long.parseLong(timestamp)).atOffset(ZoneOffset.UTC).getHour();
-        return hour;
+    private static Integer timestampToHour(String timestamp) {
+        return Instant.ofEpochMilli(Long.parseLong(timestamp)).atOffset(ZoneOffset.UTC).getHour();
     }
 
     /* Function for getting the longest bearish trend for the examined time period */
-    private void getBearishDays(@NonNull JSONArray pricesArray) throws JSONException {
+    private static void getBearishDays(@NonNull JSONArray pricesArray) throws JSONException {
         List<Integer> bearishDaysList = new ArrayList<>();
         currentPrice = 0;
         currentTime = "0";
@@ -133,7 +134,7 @@ public class HandleRequest {
     }
 
     /* Function for getting the highest volume and its date for the examined time period */
-    private void getHighestVolume(JSONArray volumesArray) throws JSONException {
+    private static void getHighestVolume(JSONArray volumesArray) throws JSONException {
         TreeMap<String, Double> volumesMap = new TreeMap<>();
 
         // If the examined time period is less than 90 days (hourly data)
@@ -163,7 +164,7 @@ public class HandleRequest {
     }
 
     /* Function for getting the best buy and sell date for the examined time period */
-    private void getMostProfit(JSONArray pricesArray) throws JSONException {
+    private static void getMostProfit(JSONArray pricesArray) throws JSONException {
         List<Double> pricesList = new ArrayList<>();
         TreeMap<Long, Double> pricesMap = new TreeMap<>();
         currentDifference = 0;

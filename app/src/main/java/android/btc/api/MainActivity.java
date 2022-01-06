@@ -14,13 +14,10 @@ import com.android.volley.toolbox.Volley;
 
 public class MainActivity extends AppCompatActivity {
 
-    // Initialize the UI-widgets
+    // Declare the UI-widgets
     TextView tvBearishDays, tvVolume, tvBuy, tvSell;
     EditText etStartDate, etEndDate;
     Button btnUpdate;
-
-    // Initialize new object out of HandleRequest.class for handling the api-requests
-    HandleRequest handleRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,30 +32,28 @@ public class MainActivity extends AppCompatActivity {
         etEndDate = findViewById(R.id.etEndDate);
         btnUpdate = findViewById(R.id.btnUpdate);
 
-        handleRequest = new HandleRequest();
-
-        // When btnUpdate is clicked, the user chosen date is converted into unix timestamp using the handleRequest's dateToTimestamp() -method.
+        // When btnUpdate is clicked, the user chosen date is converted into unix timestamp using the HandleRequest's dateToTimestamp() -method.
         btnUpdate.setOnClickListener(v -> {
             String startDate = etStartDate.getText().toString();
             String endDate = etEndDate.getText().toString();
-            handleRequest.dateToTimestamp(startDate,endDate);
+            HandleRequest.dateToTimestamp(startDate,endDate);
             fetchData();
         });
     }
 
     private void fetchData () {
-        String startDate = String.valueOf(handleRequest.startTimestamp);
-        String endDate = String.valueOf(handleRequest.endTimestamp);
+        String startDate = String.valueOf(HandleRequest.startTimestamp);
+        String endDate = String.valueOf(HandleRequest.endTimestamp);
         try {
             RequestQueue queue = Volley.newRequestQueue(this);
             String url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=eur&from=" + startDate + "&to=" + endDate;
             StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                     response -> {
-                        handleRequest.handleJson(response);
-                        tvBearishDays.setText(handleRequest.bearishDaysString);
-                        tvVolume.setText(String.format("%.2f", handleRequest.maxVolume) + " € " + " on " + handleRequest.volumeDate);
-                        tvBuy.setText(handleRequest.buyDateString);
-                        tvSell.setText(handleRequest.sellDateString);
+                        HandleRequest.handleJSON(response);
+                        tvBearishDays.setText(HandleRequest.bearishDaysString);
+                        tvVolume.setText(String.format("%.2f", HandleRequest.maxVolume) + " € " + " on " + HandleRequest.volumeDate);
+                        tvBuy.setText(HandleRequest.buyDateString);
+                        tvSell.setText(HandleRequest.sellDateString);
                     },
                     error -> System.out.println(error.toString())
             );
